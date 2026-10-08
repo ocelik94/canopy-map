@@ -1,0 +1,57 @@
+# Configured from .env: CANOPY_HOST, CADDY_TLS (`internal` = local CA, or an e-mail for Let's Encrypt).
+# Content-Security-Policy is sent by the app itself (per-request nonce), not here.
+
+# Shared reverse_proxy options. Caddy is the only edge, so it overwrites any client-supplied
+# X-Forwarded-* headers (the app derives its origin and client IP from these).
+(upstream_opts) {
+	header_up X-Forwarded-Proto {scheme}
+	header_up X-Forwarded-Host {hostport}
+	header_up X-Forwarded-For {remote_host}
+	health_uri /api/health
+	health_interval 30s
+}
+
+{$CANOPY_HOST:canopy-map.local} {
+	tls {$CADDY_TLS:internal}
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"
+		-Server
+	}
+
+	# Hashed build assets never change.
+	handle /_app/immutable/* {
+		reverse_proxy app:3000 {
+			import upstream_opts
+			header_down Cache-Control "public, max-age=31536000, immutable"
+		}
+	}
+
+	# The service worker must always be revalidated or updates never arrive.
+	handle /service-worker.js {
+		reverse_proxy app:3000 {
+			import upstream_opts
+			header_down Cache-Control "no-cache"
+		}
+	}
+
+	# API responses (including photos and sync) are never cached by browsers or proxies.
+	handle /api/* {
+		reverse_proxy app:3000 {
+			import upstream_opts
+			header_down Cache-Control "no-store"
+		}
+	}
+
+	handle {
+		reverse_proxy app:3000 {
+			import upstream_opts
+		}
+	}
+}

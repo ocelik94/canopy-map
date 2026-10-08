@@ -1,0 +1,65 @@
+name: canopy
+
+services:
+  app:
+    image: ghcr.io/ocelik94/canopy-map:${CANOPY_VERSION:-latest}
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - canopy_data:/data
+      - canopy_tiles:/tiles:ro
+    expose:
+      - '3000'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  caddy:
+    image: caddy:2.11
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      CANOPY_HOST: ${CANOPY_HOST:-canopy-map.local}
+      CADDY_TLS: ${CADDY_TLS:-internal}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  tiles:
+    image: ghcr.io/ocelik94/canopy-map:${CANOPY_VERSION:-latest}
+    profiles: ['tools']
+    restart: 'no'
+    command:
+      - -e
+      - |
+        const fs = require('node:fs');
+        for (const f of fs.existsSync('/in') ? fs.readdirSync('/in') : []) {
+          if (f.endsWith('.pmtiles')) fs.copyFileSync(`/in/${f}`, `/tiles/${f}`);
+        }
+        for (const f of fs.readdirSync('/tiles')) console.log(f, fs.statSync(`/tiles/${f}`).size);
+    volumes:
+      - canopy_tiles:/tiles
+
+volumes:
+  canopy_data:
+  canopy_tiles:
+  caddy_data:
+  caddy_config:

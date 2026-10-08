@@ -1,0 +1,129 @@
+name: Bug report
+description: Something in Canopy does not work as expected
+title: '[Bug]: '
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please do **not** include exact device coordinates, passwords,
+        session cookies or other personal data. For security problems, follow SECURITY.md instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the map
+        2. Tap a device
+        3. Tap "Battery changed"
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Map and markers
+        - Device details and quick actions
+        - Adding or moving devices
+        - Offline mode and sync
+        - Offline map areas
+        - Maintenance or rotation lists
+        - Navigation hand-off (Apple/Google Maps)
+        - Data import or export
+        - Admin, users or logs
+        - Sign-in
+        - Installation as an app (PWA)
+        - Deployment (Docker, Caddy, tiles, backups)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device
+      options:
+        - iPhone
+        - iPad
+        - Android phone
+        - Android tablet
+        - Desktop or laptop
+        - Not device-specific (server)
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: OS and browser version
+      placeholder: e.g. iOS 18.1, Safari
+    validations:
+      required: false
+
+  - type: dropdown
+    id: installed
+    attributes:
+      label: How is Canopy opened?
+      options:
+        - Installed app (home screen)
+        - Browser tab
+        - Not applicable
+    validations:
+      required: false
+
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection at the time
+      options:
+        - Online
+        - Offline
+        - Weak or changing signal
+        - Not sure
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Canopy version
+      description: Commit hash or date of the deployed version, if known.
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or logs
+      description: Drag images in here. For server problems, `docker compose logs app` output helps.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues.
+          required: true
+        - label: I removed coordinates, credentials and other personal data from this report.
+          required: true

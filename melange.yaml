@@ -1,0 +1,45 @@
+package:
+  name: canopy-map
+  version: 0.1.0
+  epoch: 0
+  description: Offline-first map of field-deployed acoustic recorders
+  copyright:
+    - license: MIT
+  dependencies:
+    runtime:
+      - ca-certificates-bundle
+      - nodejs-24
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - ca-certificates-bundle
+      - corepack
+      - nodejs-24
+      - python-3.13
+      - wolfi-baselayout
+  environment:
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    COREPACK_HOME: /tmp/corepack
+
+pipeline:
+  - name: Build
+    runs: |
+      corepack enable --install-directory /usr/bin
+      pnpm install --frozen-lockfile
+      pnpm build
+      pnpm prune --prod --ignore-scripts
+      keep="linux-$(node -p process.arch).node"
+      find node_modules/.pnpm -path '*/better-sqlite3/prebuilds/*.node' ! -name "$keep" -delete
+
+  - name: Install
+    runs: |
+      mkdir -p "${{targets.destdir}}/app/src"
+      cp -a build node_modules package.json drizzle scripts "${{targets.destdir}}/app/"
+      cp -a src/lib "${{targets.destdir}}/app/src/"

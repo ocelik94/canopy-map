@@ -1,10 +1,12 @@
-# Package Managers
+node_modules
+.svelte-kit
+build
+drizzle
+static/fonts
+THIRD_PARTY_LICENSES.md
 package-lock.json
 pnpm-lock.yaml
-yarn.lock
-bun.lock
-bun.lockb
-
-# Miscellaneous
-/static/
-/drizzle/
+test-results
+playwright-report
+data
+backups

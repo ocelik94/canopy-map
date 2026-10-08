@@ -1,0 +1,60 @@
+name: Feature request
+description: Suggest an improvement for field staff or administrators
+title: '[Feature]: '
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard or impossible today? Describe the situation in the field or office.
+      placeholder: When we plan a trip to the Vogelsberg sites, we ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: dropdown
+    id: users
+    attributes:
+      label: Who benefits?
+      multiple: true
+      options:
+        - Field staff
+        - Administrators
+        - Server operators
+    validations:
+      required: true
+
+  - type: dropdown
+    id: offline
+    attributes:
+      label: Must it work offline?
+      options:
+        - Yes, it is needed in the field without signal
+        - No, online is fine
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: >-
+        Screenshots, sketches or examples. Note that Canopy only uses permissively licensed,
+        self-hosted components (no paid or key-gated services).
+    validations:
+      required: false

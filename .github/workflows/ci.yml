@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_call' }}
+
+jobs:
+  check:
+    name: Lint, types, unit tests, licences
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Formatting
+        run: pnpm lint
+
+      - name: YAML
+        run: |
+          command -v yamllint >/dev/null || pipx install yamllint
+          yamllint --strict .
+
+      - name: Type check
+        run: pnpm check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Dependency licences
+        run: pnpm licenses:check
+
+      - name: Migrations match the schema
+        run: |
+          pnpm exec drizzle-kit generate --name ci-drift-check
+          if [ -n "$(git status --porcelain drizzle/)" ]; then
+            echo "::error::The schema changed without a migration. Run 'pnpm db:generate' and commit drizzle/."
+            git status --porcelain drizzle/
+            exit 1
+          fi
+
+  e2e:
+    name: End-to-end (phone)
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - run: pnpm test:e2e
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  image:
+    name: Image (build, scan, smoke test)
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - uses: ./.github/actions/setup-wolfi
+
+      - name: Build with melange and apko
+        run: |
+          scripts/build-image.sh canopy-map:ci
+          docker load < canopy-map.tar
+
+      - name: Smoke test
+        run: |
+          docker run -d --name canopy -p 3000:3000 \
+            -e ADMIN_USERNAME=ci -e ADMIN_PASSWORD=ci-password-only canopy-map:ci-amd64
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health; then
+              docker exec canopy node scripts/backup.mjs db | gzip -t
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs canopy
+          exit 1
+
+      - name: SBOM (syft)
+        uses: anchore/sbom-action@v0.24.3
+        with:
+          image: canopy-map:ci-amd64
+          format: spdx-json
+          artifact-name: sbom-ci.spdx.json
+
+      - name: Vulnerability scan (grype)
+        uses: anchore/scan-action@v7.4.2
+        with:
+          image: canopy-map:ci-amd64
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: false

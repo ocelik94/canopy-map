@@ -1,2 +1,9 @@
 allowBuilds:
-  esbuild: true
+  better-sqlite3: true
+  esbuild: false
+minimumReleaseAgeExclude:
+  - '@playwright/test@1.64.0'
+  - drizzle-orm@0.45.4
+  - playwright-core@1.64.0
+  - playwright@1.64.0
+  - vite@8.3.4

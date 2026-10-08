@@ -1,25 +1,60 @@
-node_modules
+# Dependencies
+node_modules/
 
-# Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
+# Build output
 /build
+/.svelte-kit
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Env
+# Environment (secrets); keep the template
 .env
 .env.*
 !.env.example
 !.env.test
 
-# Vite
+# Local data: SQLite (incl. WAL side files), photos, map tiles, backups
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+/data
+/backups
+*.pmtiles
+*.mbtiles
+*.osm.pbf
+
+# Certificates exported from Caddy's local CA
+*.crt
+*.pem
+
+# Tests and coverage
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+/coverage
+
+# Tooling caches and logs
+*.tsbuildinfo
+.eslintcache
+*.log
+npm-debug.log*
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-# SQLite
-*.db
+
+# Editors and OS
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local Claude Code settings
+.claude/
+
+# melange/apko build output and signing keys
+/packages
+/sbom-*.json
+melange.rsa
+melange.rsa.pub
+*.rsa
+canopy-map.tar

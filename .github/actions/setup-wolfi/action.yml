@@ -1,0 +1,39 @@
+name: Set up melange and apko
+description: Installs pinned melange and apko releases and the bubblewrap runner.
+
+inputs:
+  melange-version:
+    description: melange release
+    default: '0.62.0'
+  apko-version:
+    description: apko release
+    default: '1.4.8'
+
+runs:
+  using: composite
+  steps:
+    - name: Install bubblewrap
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq bubblewrap
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+    - name: Install melange and apko
+      shell: bash
+      env:
+        MELANGE: ${{ inputs.melange-version }}
+        APKO: ${{ inputs.apko-version }}
+      run: |
+        case "${RUNNER_ARCH}" in
+          X64) arch=amd64 ;;
+          ARM64) arch=arm64 ;;
+          *) echo "unsupported runner arch ${RUNNER_ARCH}" >&2; exit 1 ;;
+        esac
+        base=https://github.com/chainguard-dev
+        curl -fsSL "${base}/melange/releases/download/v${MELANGE}/melange_${MELANGE}_linux_${arch}.tar.gz" \
+          | sudo tar -xz -C /usr/local/bin --strip-components=1 "melange_${MELANGE}_linux_${arch}/melange"
+        curl -fsSL "${base}/apko/releases/download/v${APKO}/apko_${APKO}_linux_${arch}.tar.gz" \
+          | sudo tar -xz -C /usr/local/bin --strip-components=1 "apko_${APKO}_linux_${arch}/apko"
+        melange version | grep GitVersion
+        apko version | grep GitVersion
