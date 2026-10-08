@@ -13,6 +13,9 @@ test('add a device while offline, then it syncs when the connection returns', as
 	const chip = page.getByRole('button', { name: /^(Online|Offline), / });
 	await expect(chip).toHaveAccessibleName('Online, All saved', { timeout: 20_000 });
 
+	const swActive = await page.evaluate(async () => !!(await navigator.serviceWorker.ready).active);
+	expect(swActive).toBe(true);
+
 	await context.setOffline(true);
 	await page.evaluate(() => window.dispatchEvent(new Event('offline')));
 
